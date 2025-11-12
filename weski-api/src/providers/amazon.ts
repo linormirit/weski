@@ -48,16 +48,18 @@ const getHotelInFormat = (accommodation: AmazonHotelType) => {
 
 async function fetchHotels(query: AmazonQuery): Promise<Hotel[]> {
   try {
-    let promises: Promise<AxiosResponse<AmazonResonseType>>[] = []; 
+    let promises: Promise<Hotel[]>[] = [];
     for (let groupSize = query.query.group_size; groupSize <= 10; groupSize++) {
       query.query.group_size = groupSize;
       const response = axios.post<AmazonResonseType>(url, query);
-      promises.push(response)
+      promises.push(
+        response.then((res) =>
+          res.data.body.accommodations.map(getHotelInFormat)
+        )
+      );
     }
     const results = await Promise.all(promises);
-    const hotels = results.flatMap(result => result.data.body.accommodations.map(getHotelInFormat));
-
-    return hotels;
+    return results.flatMap((result) => result);
   } catch (err: any) {
     throw new Error(`amazon fetch error: ${err?.message || String(err)}`);
   }
