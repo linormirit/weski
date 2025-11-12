@@ -3,6 +3,8 @@ import NavBar from "./components/navbar/nav-bar";
 import { Hotel } from "./types";
 import { fetchHotelsStream } from "./hooks/fetchHotelsStream";
 import { useSearchFilters } from "./contexts/searchFiltersContext";
+import { Loader } from "@mantine/core";
+import { isEmpty } from "lodash";
 
 const App: React.FC = () => {
   const [hotels, setHotels] = useState<Hotel[]>([]);
@@ -15,13 +17,17 @@ const App: React.FC = () => {
     setHotels([]);
     setError(null);
     setIsLoading(true);
-    
+
     const queries = {
       amazon: {
         query: {
           ski_site: filters.skiSiteId,
-          from_date: filters.startDate ? filters.startDate.toISOString().split('T')[0] : null,
-          to_date: filters.endDate ? filters.endDate.toISOString().split('T')[0] : null,
+          from_date: filters.startDate
+            ? filters.startDate.toISOString().split("T")[0]
+            : null,
+          to_date: filters.endDate
+            ? filters.endDate.toISOString().split("T")[0]
+            : null,
           group_size: filters.groupSize,
         },
       },
@@ -45,50 +51,42 @@ const App: React.FC = () => {
     );
   };
 
-  const stopStream = () => {
-    streamRef.current?.cancel?.();
-    setIsLoading(false);
-  };
-
   return (
-      <>
-        <div className="app">
-          <NavBar onSearch={startStream} />
-        </div>
-        <div className="hotels">
-          <div>
+    <>
+      <div className="app">
+        <NavBar onSearch={startStream} />
+      </div>
+      <div className="hotels">
+        <div>
           {isLoading && (
             <div className="loader">
-              <p>Loading hotels...</p>
-              <button onClick={stopStream}>Stop</button>
+              <Loader size={"xl"} />
             </div>
           )}
-          
+
           {error && (
             <div className="error">
               <p style={{ color: "red" }}>Error: {error}</p>
               <button onClick={startStream}>Try Again</button>
             </div>
           )}
-          
-          {!isLoading && hotels.length === 0 && !error && (
-            <p>Click search to find hotels</p>
+
+          {!isEmpty(hotels) && (
+            <ul>
+              {hotels.map((h, i) => (
+                <li key={i}>
+                  {
+                    <span>
+                      {h.name} — {h.provider} — ${h.priceInfo?.amountAfterTax}
+                    </span>
+                  }
+                </li>
+              ))}
+            </ul>
           )}
-          
-          <ul>
-            {hotels.map((h, i) => (
-              <li key={i}>
-                {
-                  <span>
-                    {h.name} — {h.provider} — ${h.priceInfo?.amountAfterTax}
-                  </span>
-                }
-              </li>
-            ))}
-          </ul>
-          </div>
         </div>
-      </>
+      </div>
+    </>
   );
 };
 
